@@ -46,6 +46,9 @@
             this.totalTime = new System.Windows.Forms.Label();
             this.currentTime = new System.Windows.Forms.Label();
             this.title = new System.Windows.Forms.Label();
+            this.radioRepeatNone = new System.Windows.Forms.RadioButton();
+            this.radioRepeatOne = new System.Windows.Forms.RadioButton();
+            this.radioRepeatAll = new System.Windows.Forms.RadioButton();
             this.panelDrop.SuspendLayout();
             this.box.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarSeek)).BeginInit();
@@ -150,6 +153,9 @@
             // 
             // box
             // 
+            this.box.Controls.Add(this.radioRepeatAll);
+            this.box.Controls.Add(this.radioRepeatOne);
+            this.box.Controls.Add(this.radioRepeatNone);
             this.box.Controls.Add(this.delete);
             this.box.Controls.Add(this.play);
             this.box.Controls.Add(this.listViewFiles);
@@ -201,6 +207,43 @@
             this.title.Size = new System.Drawing.Size(0, 12);
             this.title.TabIndex = 9;
             // 
+            // radioRepeatNone
+            // 
+            this.radioRepeatNone.AutoSize = true;
+            this.radioRepeatNone.Checked = true;
+            this.radioRepeatNone.Location = new System.Drawing.Point(613, 83);
+            this.radioRepeatNone.Name = "radioRepeatNone";
+            this.radioRepeatNone.Size = new System.Drawing.Size(76, 16);
+            this.radioRepeatNone.TabIndex = 6;
+            this.radioRepeatNone.TabStop = true;
+            this.radioRepeatNone.Text = "リピートなし";
+            this.radioRepeatNone.UseVisualStyleBackColor = true;
+            this.radioRepeatNone.CheckedChanged += new System.EventHandler(this.radioRepeatNone_CheckedChanged);
+            // 
+            // radioRepeatOne
+            // 
+            this.radioRepeatOne.AutoSize = true;
+            this.radioRepeatOne.Location = new System.Drawing.Point(613, 105);
+            this.radioRepeatOne.Name = "radioRepeatOne";
+            this.radioRepeatOne.Size = new System.Drawing.Size(75, 16);
+            this.radioRepeatOne.TabIndex = 7;
+            this.radioRepeatOne.TabStop = true;
+            this.radioRepeatOne.Text = "1曲リピート";
+            this.radioRepeatOne.UseVisualStyleBackColor = true;
+            this.radioRepeatOne.CheckedChanged += new System.EventHandler(this.radioRepeatOne_CheckedChanged);
+            // 
+            // radioRepeatAll
+            // 
+            this.radioRepeatAll.AutoSize = true;
+            this.radioRepeatAll.Location = new System.Drawing.Point(613, 127);
+            this.radioRepeatAll.Name = "radioRepeatAll";
+            this.radioRepeatAll.Size = new System.Drawing.Size(81, 16);
+            this.radioRepeatAll.TabIndex = 8;
+            this.radioRepeatAll.TabStop = true;
+            this.radioRepeatAll.Text = "全曲リピート";
+            this.radioRepeatAll.UseVisualStyleBackColor = true;
+            this.radioRepeatAll.CheckedChanged += new System.EventHandler(this.radioRepeatAll_CheckedChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -223,6 +266,7 @@
             this.panelDrop.ResumeLayout(false);
             this.panelDrop.PerformLayout();
             this.box.ResumeLayout(false);
+            this.box.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarSeek)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -249,6 +293,9 @@
         private System.Windows.Forms.Label totalTime;
         private System.Windows.Forms.Label currentTime;
         private System.Windows.Forms.Label title;
+        private System.Windows.Forms.RadioButton radioRepeatAll;
+        private System.Windows.Forms.RadioButton radioRepeatOne;
+        private System.Windows.Forms.RadioButton radioRepeatNone;
     }
 }
 
