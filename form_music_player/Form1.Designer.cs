@@ -63,7 +63,7 @@
             this.button1.TabIndex = 0;
             this.button1.Text = "参照";
             this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.referance);
+            this.button1.Click += new System.EventHandler(this.Referance);
             // 
             // label1
             // 
@@ -139,7 +139,7 @@
             this.play.TabIndex = 4;
             this.play.Text = "再生";
             this.play.UseVisualStyleBackColor = true;
-            this.play.Click += new System.EventHandler(this.play_Click);
+            this.play.Click += new System.EventHandler(this.Play_Click);
             // 
             // delete
             // 
@@ -149,7 +149,7 @@
             this.delete.TabIndex = 5;
             this.delete.Text = "削除";
             this.delete.UseVisualStyleBackColor = true;
-            this.delete.Click += new System.EventHandler(this.delete_Click);
+            this.delete.Click += new System.EventHandler(this.Delete_Click);
             // 
             // box
             // 
@@ -176,8 +176,8 @@
             this.trackBarSeek.Size = new System.Drawing.Size(749, 45);
             this.trackBarSeek.TabIndex = 6;
             this.trackBarSeek.TickStyle = System.Windows.Forms.TickStyle.Both;
-            this.trackBarSeek.MouseDown += new System.Windows.Forms.MouseEventHandler(this.trackBarSeek_MouseDown);
-            this.trackBarSeek.MouseUp += new System.Windows.Forms.MouseEventHandler(this.trackBarSeek_MouseUp);
+            this.trackBarSeek.MouseDown += new System.Windows.Forms.MouseEventHandler(this.TrackBarSeek_MouseDown);
+            this.trackBarSeek.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TrackBarSeek_MouseUp);
             // 
             // totalTime
             // 
@@ -218,7 +218,7 @@
             this.radioRepeatNone.TabStop = true;
             this.radioRepeatNone.Text = "リピートなし";
             this.radioRepeatNone.UseVisualStyleBackColor = true;
-            this.radioRepeatNone.CheckedChanged += new System.EventHandler(this.radioRepeatNone_CheckedChanged);
+            this.radioRepeatNone.CheckedChanged += new System.EventHandler(this.RadioRepeatNone_CheckedChanged);
             // 
             // radioRepeatOne
             // 
@@ -227,10 +227,9 @@
             this.radioRepeatOne.Name = "radioRepeatOne";
             this.radioRepeatOne.Size = new System.Drawing.Size(75, 16);
             this.radioRepeatOne.TabIndex = 7;
-            this.radioRepeatOne.TabStop = true;
             this.radioRepeatOne.Text = "1曲リピート";
             this.radioRepeatOne.UseVisualStyleBackColor = true;
-            this.radioRepeatOne.CheckedChanged += new System.EventHandler(this.radioRepeatOne_CheckedChanged);
+            this.radioRepeatOne.CheckedChanged += new System.EventHandler(this.RadioRepeatOne_CheckedChanged);
             // 
             // radioRepeatAll
             // 
@@ -239,10 +238,9 @@
             this.radioRepeatAll.Name = "radioRepeatAll";
             this.radioRepeatAll.Size = new System.Drawing.Size(81, 16);
             this.radioRepeatAll.TabIndex = 8;
-            this.radioRepeatAll.TabStop = true;
             this.radioRepeatAll.Text = "全曲リピート";
             this.radioRepeatAll.UseVisualStyleBackColor = true;
-            this.radioRepeatAll.CheckedChanged += new System.EventHandler(this.radioRepeatAll_CheckedChanged);
+            this.radioRepeatAll.CheckedChanged += new System.EventHandler(this.RadioRepeatAll_CheckedChanged);
             // 
             // Form1
             // 
