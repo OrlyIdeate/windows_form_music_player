@@ -84,12 +84,23 @@ namespace 上野迅_インターン_20250513
         // --- ListView操作 ---
         private void AddFileToListView(string filePath)
         {
-            var info = AudioUtils.CreateAudioFilesInfo(filePath);
-            var item = new ListViewItem(new[] { info.FileName, info.Date, info.Type, info.Size })
+            // 既存のファイルがリストにあるかチェック
+            foreach (ListViewItem item in listViewFiles.Items)
             {
-                Tag = info
+                var info = item.Tag as AudioFilesInfo;
+                if (info != null && string.Equals(info.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show($"{info.FileName}はすでにリストに追加されています。");
+                    return;
+                }
+            }
+
+            var newinfo = AudioUtils.CreateAudioFilesInfo(filePath);
+            var newitem = new ListViewItem(new[] { newinfo.FileName, newinfo.Date, newinfo.Type, newinfo.Size })
+            {
+                Tag = newinfo
             };
-            listViewFiles.Items.Add(item);
+            listViewFiles.Items.Add(newitem);
         }
 
         private void delete_Click(object sender, EventArgs e)
