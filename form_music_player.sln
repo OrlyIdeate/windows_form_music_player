@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "上野迅_インターン_20250513", "上野迅_インターン_20250513\上野迅_インターン_20250513.csproj", "{DAD1EAB1-7157-4145-9085-F919DBFF4DB3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "form_music_player", "form_music_player\form_music_player.csproj", "{DAD1EAB1-7157-4145-9085-F919DBFF4DB3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
