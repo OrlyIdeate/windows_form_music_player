@@ -32,8 +32,8 @@ namespace 上野迅_インターン_20250513
         private void InitializeDragDrop()
         {
             panelDrop.AllowDrop = true;
-            panelDrop.DragEnter += panelDrop_DragEnter;
-            panelDrop.DragDrop += panelDrop_DragDrop;
+            panelDrop.DragEnter += PanelDrop_DragEnter;
+            panelDrop.DragDrop += PanelDrop_DragDrop;
         }
 
         // --- フォームイベント ---
@@ -48,14 +48,24 @@ namespace 上野迅_インターン_20250513
         }
 
         // --- ドラッグ＆ドロップ ---
-        private void panelDrop_DragEnter(object sender, DragEventArgs e)
+        private void PanelDrop_DragEnter(object sender, DragEventArgs e)
         {
-            e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop)
-                ? DragDropEffects.Copy
-                : DragDropEffects.None;
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            foreach (var filePath in files)
+            {
+                if (!IsValidAudioFormat(filePath))
+                {
+                    MessageBox.Show($"{Path.GetFileName(filePath)}はサポートされていないファイル形式です。WAVまたはMP3ファイルを選択してください。",
+                        "サポート外のファイル形式です",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    continue;
+                }
+                AddFileToListView(filePath);
+            }
         }
 
-        private void panelDrop_DragDrop(object sender, DragEventArgs e)
+        private void PanelDrop_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
             foreach (var filePath in files)
@@ -65,7 +75,7 @@ namespace 上野迅_インターン_20250513
         }
 
         // --- ファイル参照 ---
-        private void referance(object sender, EventArgs e)
+        private void Referance(object sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog
             {
@@ -78,6 +88,14 @@ namespace 上野迅_インターン_20250513
                 {
                     foreach (var filePath in ofd.FileNames)
                     {
+                        if (!IsValidAudioFormat(filePath))
+                        {
+                            MessageBox.Show($"{Path.GetFileName(filePath)}はサポートされていないファイル形式です。WAVまたはMP3ファイルを選択してください。",
+                                "サポート外のファイル形式です",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                            continue;
+                        }
                         AddFileToListView(filePath);
                     }
                 }
@@ -89,7 +107,10 @@ namespace 上野迅_インターン_20250513
         {
             if (IsFileAlreadyInList(filePath))
             {
-                MessageBox.Show($"{Path.GetFileName(filePath)}はすでにリストに追加されています。");
+                MessageBox.Show($"{Path.GetFileName(filePath)}はすでにリストに追加されています。",
+                    "エラー",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 return;
             }
 
@@ -105,8 +126,7 @@ namespace 上野迅_インターン_20250513
         {
             foreach (ListViewItem item in listViewFiles.Items)
             {
-                var info = item.Tag as AudioFilesInfo;
-                if (info != null && string.Equals(info.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                if (item.Tag is AudioFilesInfo info && string.Equals(info.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -114,14 +134,14 @@ namespace 上野迅_インターン_20250513
             return false;
         }
 
-        private void delete_Click(object sender, EventArgs e)
+        private void Delete_Click(object sender, EventArgs e)
         {
             if (listViewFiles.SelectedItems.Count == 0)
             {
-                MessageBox.Show("Listから選択してください");
+                MessageBox.Show("ファイルが選択されていません", "Listから選択してください", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            var result = MessageBox.Show("本当に削除しますか？", "リストから削除", MessageBoxButtons.YesNoCancel);
+            var result = MessageBox.Show("本当に削除しますか？", "リストから削除", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation);
             if (result != DialogResult.Yes) return;
 
             foreach (ListViewItem item in listViewFiles.SelectedItems)
@@ -131,7 +151,7 @@ namespace 上野迅_インターン_20250513
         }
 
         // --- 再生・停止 ---
-        private void play_Click(object sender, EventArgs e)
+        private void Play_Click(object sender, EventArgs e)
         {
             if (!isPlaying) StartPlayback(sender);
             else StopPlayback(sender);
@@ -141,20 +161,14 @@ namespace 上野迅_インターン_20250513
         {
             if (listViewFiles.SelectedItems.Count == 0)
             {
-                MessageBox.Show("Listから選択してください");
+                MessageBox.Show("ファイルが選択されていません", "Listから選択してください", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var item = listViewFiles.SelectedItems[0];
-            var info = item.Tag as AudioFilesInfo;
-            if (info == null) return;
+            if (!(item.Tag is AudioFilesInfo info)) return;
 
             string path = info.FilePath;
-            if (!IsValidAudioFormat(path))
-            {
-                MessageBox.Show("WAVまたはMP3ファイルを選択してください。");
-                return;
-            }
 
             try
             {
@@ -170,7 +184,7 @@ namespace 上野迅_インターン_20250513
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"再生できませんでした：\n{ex.Message}");
+                MessageBox.Show(ex.Message, "再生できませんでした", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -278,8 +292,10 @@ namespace 上野迅_インターン_20250513
         {
             if (listViewFiles.SelectedItems.Count > 0 && audioFileReader != null)
             {
-                var info = listViewFiles.SelectedItems[0].Tag as AudioFilesInfo;
-                if (info != null) info.LastPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
+                if (listViewFiles.SelectedItems[0].Tag is AudioFilesInfo info)
+                {
+                    info.LastPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
+                }
             }
         }
 
@@ -321,12 +337,12 @@ namespace 上野迅_インターン_20250513
             }
         }
 
-        private void trackBarSeek_MouseDown(object sender, MouseEventArgs e)
+        private void TrackBarSeek_MouseDown(object sender, MouseEventArgs e)
         {
             isSeeking = true;
         }
 
-        private void trackBarSeek_MouseUp(object sender, MouseEventArgs e)
+        private void TrackBarSeek_MouseUp(object sender, MouseEventArgs e)
         {
             if (audioFileReader != null)
             {
@@ -372,17 +388,17 @@ namespace 上野迅_インターン_20250513
         }
 
         // --- リピート変更 ---
-        private void radioRepeatNone_CheckedChanged(object sender, EventArgs e)
+        private void RadioRepeatNone_CheckedChanged(object sender, EventArgs e)
         {
             if (radioRepeatNone.Checked) repeatMode = RepeatMode.None;
         }
 
-        private void radioRepeatOne_CheckedChanged(object sender, EventArgs e)
+        private void RadioRepeatOne_CheckedChanged(object sender, EventArgs e)
         {
             if (radioRepeatOne.Checked) repeatMode = RepeatMode.One;
         }
 
-        private void radioRepeatAll_CheckedChanged(object sender, EventArgs e)
+        private void RadioRepeatAll_CheckedChanged(object sender, EventArgs e)
         {
             if (radioRepeatAll.Checked) repeatMode = RepeatMode.All;
         }
