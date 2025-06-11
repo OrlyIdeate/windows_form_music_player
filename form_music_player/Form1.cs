@@ -18,6 +18,10 @@ namespace 上野迅_インターン_20250513
         private bool isSeeking = false;
         private AudioFilesInfo lastPlayedInfo = null;
         private bool suppressAutoPlay = false;
+        public enum RepeatMode { None, One, All };
+        private RepeatMode repeatMode = RepeatMode.None;
+
+
 
         // --- コンストラクタ ---
         public Form1()
@@ -200,11 +204,28 @@ namespace 上野迅_インターン_20250513
 
                     // --- 自動で次の曲を再生 ---
                     var currentItem = listViewFiles.SelectedItems.Count > 0 ? listViewFiles.SelectedItems[0] : null;
+
+                    if (repeatMode == RepeatMode.One && currentItem != null)
+                    {
+                        // 1曲リピート
+                        StartPlayback(sender);
+                        return;
+                    }
+
                     var nextItem = currentItem != null ? GetNextListViewItem(currentItem) : null;
                     if (nextItem != null)
                     {
                         listViewFiles.SelectedItems.Clear();
                         nextItem.Selected = true;
+                        listViewFiles.Select();
+                        StartPlayback(sender);
+                    }
+                    else if (repeatMode == RepeatMode.All && listViewFiles.Items.Count > 0)
+                    {
+                        // 全曲リピート
+                        var firstItems = listViewFiles.Items[0];
+                        listViewFiles.SelectedItems.Clear();
+                        firstItems.Selected = true;
                         listViewFiles.Select();
                         StartPlayback(sender);
                     }
@@ -324,6 +345,21 @@ namespace 上野迅_インターン_20250513
                 return listViewFiles.Items[idx + 1];
             }
             return null;
+        }
+
+        private void radioRepeatNone_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioRepeatNone.Checked) repeatMode = RepeatMode.None;
+        }
+
+        private void radioRepeatOne_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioRepeatOne.Checked) repeatMode = RepeatMode.One;
+        }
+
+        private void radioRepeatAll_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioRepeatAll.Checked) repeatMode = RepeatMode.All;
         }
     }
 }
