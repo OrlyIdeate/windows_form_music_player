@@ -11,17 +11,15 @@ namespace 上野迅_インターン_20250513
     public partial class Form1 : Form
     {
         // --- フィールド ---
-        private IWavePlayer waveOut = null;
-        private AudioFileReader audioFileReader = null;
-        private Timer seekTimer = null;
-        private bool isPlaying = false;
-        private bool isSeeking = false;
-        private AudioFilesInfo lastPlayedInfo = null;
-        private bool suppressAutoPlay = false;
-        public enum RepeatMode { None, One, All };
+        private IWavePlayer waveOut;
+        private AudioFileReader audioFileReader;
+        private Timer seekTimer;
+        private bool isPlaying;
+        private bool isSeeking;
+        private AudioFilesInfo lastPlayedInfo;
+        private bool suppressAutoPlay;
+        public enum RepeatMode { None, One, All }
         private RepeatMode repeatMode = RepeatMode.None;
-
-
 
         // --- コンストラクタ ---
         public Form1()
@@ -69,12 +67,13 @@ namespace 上野迅_インターン_20250513
         // --- ファイル参照 ---
         private void referance(object sender, EventArgs e)
         {
-            using (OpenFileDialog ofd = new OpenFileDialog())
+            using (OpenFileDialog ofd = new OpenFileDialog
             {
-                ofd.Filter = "音声ファイル|*.wav;*.mp3|すべてのファイル|*.*";
-                ofd.Title = "音声ファイルを選択してください";
-                ofd.Multiselect = true;
-
+                Filter = "音声ファイル|*.wav;*.mp3|すべてのファイル|*.*",
+                Title = "音声ファイルを選択してください",
+                Multiselect = true
+            })
+            {
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     foreach (var filePath in ofd.FileNames)
@@ -88,23 +87,31 @@ namespace 上野迅_インターン_20250513
         // --- ListView操作 ---
         private void AddFileToListView(string filePath)
         {
-            // 既存のファイルがリストにあるかチェック
+            if (IsFileAlreadyInList(filePath))
+            {
+                MessageBox.Show($"{Path.GetFileName(filePath)}はすでにリストに追加されています。");
+                return;
+            }
+
+            var info = AudioUtils.CreateAudioFilesInfo(filePath);
+            var item = new ListViewItem(new[] { info.FileName, info.Date, info.Type, info.Size })
+            {
+                Tag = info
+            };
+            listViewFiles.Items.Add(item);
+        }
+
+        private bool IsFileAlreadyInList(string filePath)
+        {
             foreach (ListViewItem item in listViewFiles.Items)
             {
                 var info = item.Tag as AudioFilesInfo;
                 if (info != null && string.Equals(info.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
                 {
-                    MessageBox.Show($"{info.FileName}はすでにリストに追加されています。");
-                    return;
+                    return true;
                 }
             }
-
-            var newinfo = AudioUtils.CreateAudioFilesInfo(filePath);
-            var newitem = new ListViewItem(new[] { newinfo.FileName, newinfo.Date, newinfo.Type, newinfo.Size })
-            {
-                Tag = newinfo
-            };
-            listViewFiles.Items.Add(newitem);
+            return false;
         }
 
         private void delete_Click(object sender, EventArgs e)
@@ -126,14 +133,8 @@ namespace 上野迅_インターン_20250513
         // --- 再生・停止 ---
         private void play_Click(object sender, EventArgs e)
         {
-            if (!isPlaying)
-            {
-                StartPlayback(sender);
-            }
-            else
-            {
-                StopPlayback(sender);
-            }
+            if (!isPlaying) StartPlayback(sender);
+            else StopPlayback(sender);
         }
 
         private void StartPlayback(object sender)
@@ -146,10 +147,10 @@ namespace 上野迅_インターン_20250513
 
             var item = listViewFiles.SelectedItems[0];
             var info = item.Tag as AudioFilesInfo;
-            string filePath = info?.FilePath;
-            string ext = Path.GetExtension(filePath).ToLower();
+            if (info == null) return;
 
-            if (ext != ".wav" && ext != ".mp3")
+            string path = info.FilePath;
+            if (!IsValidAudioFormat(path))
             {
                 MessageBox.Show("WAVまたはMP3ファイルを選択してください。");
                 return;
@@ -157,80 +158,14 @@ namespace 上野迅_インターン_20250513
 
             try
             {
-                audioFileReader = new AudioFileReader(filePath);
-                totalTime.Text = audioFileReader.TotalTime.ToString(@"\/mm\:ss");
-                title.Text = info.FileName;
-                waveOut = new WaveOutEvent();
-                waveOut.Init(audioFileReader);
-
-                // 続きから再生（同じファイルの場合のみ）
-                if (lastPlayedInfo == info && info.LastPositionSeconds > 0 && info.LastPositionSeconds < audioFileReader.TotalTime.TotalSeconds)
-                {
-                    audioFileReader.CurrentTime = TimeSpan.FromSeconds(info.LastPositionSeconds);
-                    trackBarSeek.Value = (int)info.LastPositionSeconds;
-                    currentTime.Text = audioFileReader.CurrentTime.ToString(@"mm\:ss");
-                }
-                else
-                {
-                    info.LastPositionSeconds = 0;
-                    trackBarSeek.Value = 0;
-                    currentTime.Text = "00:00";
-                }
-
+                SetupAudio(path, info);
                 waveOut.Play();
                 isPlaying = true;
                 SetPlayButtonText(sender, "停止");
                 InitSeekBar();
+                StartSeekTimer();
 
-                if (seekTimer == null)
-                {
-                    seekTimer = new Timer { Interval = 500 };
-                    seekTimer.Tick += SeekTimer_Tick;
-                }
-                seekTimer.Start();
-
-                waveOut.PlaybackStopped += (s, args) =>
-                {
-                    isPlaying = false;
-                    SetPlayButtonText(sender, "再生");
-                    seekTimer?.Stop();
-                    DisposeAudio();
-
-                    if (suppressAutoPlay)
-                    {
-                        suppressAutoPlay = false;
-                        return;
-                    }
-
-                    // --- 自動で次の曲を再生 ---
-                    var currentItem = listViewFiles.SelectedItems.Count > 0 ? listViewFiles.SelectedItems[0] : null;
-
-                    if (repeatMode == RepeatMode.One && currentItem != null)
-                    {
-                        // 1曲リピート
-                        StartPlayback(sender);
-                        return;
-                    }
-
-                    var nextItem = currentItem != null ? GetNextListViewItem(currentItem) : null;
-                    if (nextItem != null)
-                    {
-                        listViewFiles.SelectedItems.Clear();
-                        nextItem.Selected = true;
-                        listViewFiles.Select();
-                        StartPlayback(sender);
-                    }
-                    else if (repeatMode == RepeatMode.All && listViewFiles.Items.Count > 0)
-                    {
-                        // 全曲リピート
-                        var firstItems = listViewFiles.Items[0];
-                        listViewFiles.SelectedItems.Clear();
-                        firstItems.Selected = true;
-                        listViewFiles.Select();
-                        StartPlayback(sender);
-                    }
-                };
-
+                waveOut.PlaybackStopped += (s, args) => HandlePlaybackStopped(sender);
                 lastPlayedInfo = info;
             }
             catch (Exception ex)
@@ -242,16 +177,7 @@ namespace 上野迅_インターン_20250513
         private void StopPlayback(object sender)
         {
             suppressAutoPlay = true;
-            // 停止時に再生位置を記録
-            if (listViewFiles.SelectedItems.Count > 0)
-            {
-                var item = listViewFiles.SelectedItems[0];
-                var info = item.Tag as AudioFilesInfo;
-                if (audioFileReader != null)
-                {
-                    info.LastPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
-                }
-            }
+            SaveCurrentPosition();
             waveOut?.Stop();
             isPlaying = false;
             SetPlayButtonText(sender, "再生");
@@ -269,12 +195,110 @@ namespace 上野迅_インターン_20250513
             }
         }
 
+        // --- 再生関連のヘルパー ---
+        private bool IsValidAudioFormat(string path)
+        {
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            return (ext == ".wav" || ext == ".mp3");
+        }
+
+        private void SetupAudio(string filePath, AudioFilesInfo info)
+        {
+            audioFileReader = new AudioFileReader(filePath);
+            totalTime.Text = audioFileReader.TotalTime.ToString(@"\/mm\:ss");
+            title.Text = info.FileName;
+
+            waveOut = new WaveOutEvent();
+            waveOut.Init(audioFileReader);
+
+            // 前回の続きから再生
+            if (ShouldResumeLastPosition(info, audioFileReader))
+            {
+                audioFileReader.CurrentTime = TimeSpan.FromSeconds(info.LastPositionSeconds);
+                trackBarSeek.Value = (int)info.LastPositionSeconds;
+                currentTime.Text = audioFileReader.CurrentTime.ToString(@"mm\:ss");
+            }
+            else
+            {
+                info.LastPositionSeconds = 0;
+                trackBarSeek.Value = 0;
+                currentTime.Text = "00:00";
+            }
+        }
+
+        private bool ShouldResumeLastPosition(AudioFilesInfo info, AudioFileReader reader)
+        {
+            return lastPlayedInfo == info
+                && info.LastPositionSeconds > 0
+                && info.LastPositionSeconds < reader.TotalTime.TotalSeconds;
+        }
+
+        private void HandlePlaybackStopped(object sender)
+        {
+            isPlaying = false;
+            SetPlayButtonText(sender, "再生");
+            seekTimer?.Stop();
+            DisposeAudio();
+
+            if (suppressAutoPlay)
+            {
+                suppressAutoPlay = false;
+                return;
+            }
+
+            var currentItem = listViewFiles.SelectedItems.Count > 0 ? listViewFiles.SelectedItems[0] : null;
+
+            // 1曲リピート
+            if (repeatMode == RepeatMode.One && currentItem != null)
+            {
+                StartPlayback(sender);
+                return;
+            }
+
+            // 次の曲へ or 全曲リピート
+            var nextItem = currentItem != null ? GetNextListViewItem(currentItem) : null;
+            if (nextItem != null)
+            {
+                listViewFiles.SelectedItems.Clear();
+                nextItem.Selected = true;
+                listViewFiles.Select();
+                StartPlayback(sender);
+            }
+            else if (repeatMode == RepeatMode.All && listViewFiles.Items.Count > 0)
+            {
+                var firstItems = listViewFiles.Items[0];
+                listViewFiles.SelectedItems.Clear();
+                firstItems.Selected = true;
+                listViewFiles.Select();
+                StartPlayback(sender);
+            }
+        }
+
+        private void SaveCurrentPosition()
+        {
+            if (listViewFiles.SelectedItems.Count > 0 && audioFileReader != null)
+            {
+                var info = listViewFiles.SelectedItems[0].Tag as AudioFilesInfo;
+                if (info != null) info.LastPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
+            }
+        }
+
         private void DisposeAudio()
         {
             waveOut?.Dispose();
             audioFileReader?.Dispose();
             waveOut = null;
             audioFileReader = null;
+        }
+
+        private void StartSeekTimer()
+        {
+            if (seekTimer == null)
+            {
+                seekTimer = new Timer { Interval = 500 };
+                seekTimer.Tick += SeekTimer_Tick;
+            }
+            seekTimer.Start();
         }
 
         // --- シークバー ---
@@ -288,8 +312,8 @@ namespace 上野迅_インターン_20250513
         {
             if (audioFileReader != null && !isSeeking)
             {
-                int pos = (int)audioFileReader.CurrentTime.TotalSeconds;
-                if (pos >= trackBarSeek.Minimum && pos <= trackBarSeek.Maximum)
+                var pos = (int)audioFileReader.CurrentTime.TotalSeconds;
+                if (trackBarSeek.Minimum <= pos && pos <= trackBarSeek.Maximum)
                 {
                     trackBarSeek.Value = pos;
                 }
@@ -339,7 +363,7 @@ namespace 上野迅_インターン_20250513
         // --- 次の曲を取得 ---
         private ListViewItem GetNextListViewItem(ListViewItem currentItem)
         {
-            int idx = currentItem.Index;
+            var idx = currentItem.Index;
             if (idx < listViewFiles.Items.Count - 1)
             {
                 return listViewFiles.Items[idx + 1];
@@ -347,6 +371,7 @@ namespace 上野迅_インターン_20250513
             return null;
         }
 
+        // --- リピート変更 ---
         private void radioRepeatNone_CheckedChanged(object sender, EventArgs e)
         {
             if (radioRepeatNone.Checked) repeatMode = RepeatMode.None;
